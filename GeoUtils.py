@@ -57,22 +57,35 @@ def alpha_sum_x(links):
     return alpha_sum
 
 
+def quat_from_theta(theta):
+    """"""
+    return [cos(theta / 2.0), 0.0, sin(theta / 2.0), 0.0]
+
 def x_from_matrix(m):
     """
-    returns the x value from an SE(2) matrix
-    :param m: the SE(2) matrix, a numpy.matrix object
+    returns the x value from an SE(3) matrix
+    :param m: the SE(3) matrix, a numpy.matrix object
     :return: the x value from the matrix
     """
-    return m.item((0, 2))
+    return m.item((0, 3))
 
 
 def y_from_matrix(m):
     """
-    returns the y value from an SE(2) matrix
-    :param m: the SE(2) matrix, a numpy.matrix object
+    returns the y value from an SE(3) matrix
+    :param m: the SE(3) matrix, a numpy.matrix object
     :return: the y value from the matrix
     """
-    return m.item((1, 2))
+    return m.item((1, 3))
+
+
+def z_from_matrix(m):
+    """
+    returns the z value from an SE(3) matrix
+    :param m: the SE(3) matrix, a numpy.matrix object
+    :return: the z value from the matrix
+    """
+    return m.item((2, 3))
 
 
 def matrix_wrapper(row1, row2, row3):
