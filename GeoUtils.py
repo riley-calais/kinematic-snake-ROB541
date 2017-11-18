@@ -172,3 +172,14 @@ def calc_g_dot(jacobian, alphas, n):
     row2 = sum([jacobian.item((1, i)) * alphas.item((0, i)) for i in range(n)])
     row3 = sum([jacobian.item((2, i)) * alphas.item((0, i)) for i in range(n)])
     return [row1, row2, row3]
+
+
+def system_body_velocity(link0, link1, link2, alpha0, alpha1, alpha0_dot, alpha1_dot):
+    """"""
+    d = link1.length * sin(alpha0, alpha1) - link0.length * sin(alpha0) + link2 * sin(alpha1)
+    if d == 0:
+        return -1  # error state
+    row1 = -1 * link0.length * (link2.length + link1.length * cos(alpha1))
+
+#
+# def body_velocity_g1()

@@ -1,8 +1,8 @@
 import pygame
 from pygame.locals import *
-
 from OpenGL.GL import *
 from OpenGL.GLU import *
+
 
 
 def rectangle(a, b, c, d):
@@ -10,7 +10,8 @@ def rectangle(a, b, c, d):
         a - - - b
         |       |
         |       |
-        c - - - d"""
+        c - - - d
+        """
     triangle(a, b, c)  # upper left portion
     triangle(b, c, d)  # bottom right portion
 
