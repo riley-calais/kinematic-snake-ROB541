@@ -96,9 +96,14 @@ def calc_beta(g, joint_left, joint_right):
     return SE3.SE3(x, y, z, quat_from_theta(theta))
 
 
-def system_body_velocity(link0, link1, link2, alpha0, alpha1, alpha0_dot, alpha1_dot):
+def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
     """"""
-    d = link1.length * sin(alpha0, alpha1) - link0.length * sin(alpha0) + link2 * sin(alpha1)
+    d = length * sin(alpha0 + alpha1) - length * sin(alpha0) + length * sin(alpha1)
     if d == 0:
         return -1  # error state
-    row1 = -1 * link0.length * (link2.length + link1.length * cos(alpha1))
+    d = -1 / d
+    row1 = ((-1 * length * (length + length * cos(alpha0)) * 0.5) * d * alpha0_dot) + \
+           ((length * (length - length * cos(alpha1)) * 0.5) * d * alpha1_dot)
+    row2 = 0  # the y and z components will be zero for the body velocity of the system frame, so this still works
+    row3 = ((-1 * length * sin(alpha1)) * d * alpha0_dot) + ((length * sin(alpha1)) * d * alpha1_dot)
+    return matrix([row1, row2, row3])

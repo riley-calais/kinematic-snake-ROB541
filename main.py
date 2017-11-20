@@ -45,41 +45,39 @@ def main():
     glRotatef(25, 1, 0, 0)
     glTranslatef(-1.0, -2.5, -10)
 
-    # glTranslatef(0.0, 0.0, -5)
-
-    # joint_left = Joint.Joint(0.0)  # the joint between the left link and the center link
-    # joint_right = Joint.Joint(0.0)  # the joint between the center link and the right link
-    joint_left = math.pi * 0.5
-    joint_right = math.pi * 0.5
+    # initialize alphas to 0
+    joint_left = 0.0
+    joint_right = 0.0
+    # center is the center link, g is the system body frame
     center = Link.Link()
-    g = deepcopy(center)
+    g = Link.Link()
+    # beta the transform from center link to CoM/mean orientation frame
     beta = GeoUtils.calc_beta(center, joint_left, joint_right)
     g.update(beta.matrix)
-    # center.update(SE3.SE3(-1 * center.length, 0.0, 0.0, GeoUtils.quat_from_theta(0.0)).matrix)
+    # left is the index -1 link, right is the index 1 link
     left = Link.Link()
-    h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, -1 * joint_left).matrix)
+    # the Link constructor initializes to the origin, so we need to move the links to their initial positions
+    h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
     left.update(h_left)
-    # left.update(SE3.SE3(-1 * center.displacement(), 0.0, 0.0, GeoUtils.quat_from_theta(0.0)).matrix)
     right = Link.Link()
     h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
     right.update(h_right)
-    # right.update(SE3.SE3(center.displacement(), 0.0, 0.0, GeoUtils.quat_from_theta(0.0)).matrix)
 
-
+    # create a list of vertices that will need to be drawn
     vertex_list = {}  # initialize an empty dictionary each time
     draw_walls()
     left.draw_joint(vertex_list)
-    # center.update(SE3.SE3(0.0, 0.0, 0.0, GeoUtils.quat_from_theta(math.pi / 50)).matrix)
     center.draw_joint(vertex_list)
     right.draw_joint(vertex_list)
 
+    # draw everything to the screen, in the correct z and y order
     Primitives.render_all(vertex_list)
     pygame.display.flip()
     pygame.time.wait(80)
 
-    beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-
+    # steps determines how fast we change the alpha values (joint_left and joint_right)
     steps = 100
+    alpha_dot = math.pi / (steps * 0.5)
     for i in range(steps):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -87,7 +85,7 @@ def main():
                 quit()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        vertex_list = {}  # initialize an empty dictionary each time
+        vertex_list = {}  # reset the dictionary each time
 
         draw_walls()
 
@@ -95,21 +93,24 @@ def main():
         # TODO: update links based on body velocity of CoM frame
 
         beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-        joint_left += math.pi / 50
-        h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, -1 * joint_left).matrix)
+        g.update(beta.matrix)
+        g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot, alpha_dot)
+        joint_left += alpha_dot
+        h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
         left.update(h_left)
-        joint_right += math.pi / 50
+        joint_right += alpha_dot
         h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-        # right.update(h_right)
+        right.update(h_right)
+
+        # now draw everything
         left.draw_joint(vertex_list)
-        # center.update(SE3.SE3(0.0, 0.0, 0.0, GeoUtils.quat_from_theta(math.pi / 50)).matrix)
         center.draw_joint(vertex_list)
         right.draw_joint(vertex_list)
-
         Primitives.render_all(vertex_list)
         pygame.display.flip()
-        pygame.time.wait(40)
+        pygame.time.wait(80)
 
+        # save each frame so we can make a gif afterward
         pygame.image.save(surface, directory + "pic" + str(i) + ".png")
 
 

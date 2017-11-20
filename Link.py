@@ -40,8 +40,8 @@ class Link:
         """"""
         # first we update the current matrix
         self.gmp.mult_right_mat(h)
-        adjoint = GeoUtils.adjoint_inverse(self.gmp.matrix, self.gmp.matrix, h)
-        self.gmp.mult_right_mat(adjoint)
+        # adjoint = GeoUtils.adjoint_inverse(self.gmp.matrix, self.gmp.matrix, h)
+        # self.gmp.mult_right_mat(adjoint)
         # then we have to update all the rigidly attached vertices, starting with the top
         adjoint = GeoUtils.adjoint_inverse(self.gmp.matrix, self.top_back_left.matrix, h)
         self.top_back_left.mult_right_mat(adjoint)
