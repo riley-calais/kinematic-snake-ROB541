@@ -1,5 +1,6 @@
 import math
 from copy import deepcopy
+import csv
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
@@ -60,10 +61,10 @@ def main():
     # h_center = GeoUtils.frame_difference(center.gmp.matrix, g.gmp.matrix * beta.matrix.getI())
     center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
     # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
-    left.update(GeoUtils.g_left(center, joint_left))
+    # left.update(GeoUtils.g_left(center, joint_left))
     right = Link.Link()
     # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-    right.update(GeoUtils.g_right(center, joint_right))
+    # right.update(GeoUtils.g_right(center, joint_right))
 
     # create a list of vertices that will need to be drawn
     vertex_list = {}  # initialize an empty dictionary each time
@@ -78,45 +79,68 @@ def main():
     pygame.time.wait(80)
 
     # steps determines how fast we change the alpha values (joint_left and joint_right)
-    steps = 100
-    alpha_dot = math.pi / (steps * 0.5)
-    for i in range(steps):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+    # steps = 100
+    # alpha_dot = math.pi / (steps * 0.5)
+    # for i in range(steps):
+    filename = directory + "snake_input.csv"
+    with open(filename) as alpha_file:
+        alpha_reader = csv.reader(alpha_file)
+        first_loop = True
+        alpha_prev = [0, 0]
+        i = 0
+        for alpha_cur in alpha_reader:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        vertex_list = {}  # reset the dictionary each time
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            vertex_list = {}  # reset the dictionary each time
 
-        draw_walls()
+            draw_walls()
 
-        # TODO: draw links based on relative placement... almost there...
-        # TODO: update links based on body velocity of CoM frame
+            if first_loop:
+                alpha_dot_left = 0.0  # the velocity starts at zero
+                alpha_dot_right = 0.0
+            else:
+                alpha_dot_left = float(alpha_cur[0]) - float(alpha_prev[0])
+                alpha_dot_right = float(alpha_cur[1]) - float(alpha_prev[1])
+            first_loop = False
 
-        joint_left += alpha_dot
-        joint_right += alpha_dot
-        beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-        g.update(beta)
-        g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot, alpha_dot)
-        # h_center = GeoUtils.frame_difference(center.gmp.matrix, g.gmp.matrix * beta.matrix.getI())
-        # center.update(h_center)
-        center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())
-        # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
-        left.update(GeoUtils.g_left(center, joint_left))
-        # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-        right.update(GeoUtils.g_right(center, joint_right))
+            joint_left = float(alpha_cur[0])
+            joint_right = float(alpha_cur[1])
+            beta = GeoUtils.calc_beta(center, joint_left, joint_right)
+            g.update(beta)
+            g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot_left,
+                                                            alpha_dot_right)
+            """ g_body_velocity contains the x and theta components of the body velocity of the CoM frame
+                1. convert to world velocities
+                2. update the position and orientation of g with those velocities 
+                   (you can just make a quaternion with theta, it's ok)
+                3. I think we have the rest, actually... we update the center link based on the new values of g...
+            """
 
-        # now draw everything
-        left.draw_joint(vertex_list)
-        center.draw_joint(vertex_list)
-        right.draw_joint(vertex_list)
-        Primitives.render_all(vertex_list)
-        pygame.display.flip()
-        pygame.time.wait(80)
+            center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())
+            # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
+            left.update(GeoUtils.g_left(center, joint_left))
+            # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
+            right.update(GeoUtils.g_right(center, joint_right))
+            # TODO: the links aren't updating correctly... it's like they get some sort of z offset,
+            # TODO: so maybe look for that...
 
-        # save each frame so we can make a gif afterward
-        pygame.image.save(surface, directory + "pic" + str(i) + ".png")
+            # now draw everything
+            left.draw_joint(vertex_list)
+            center.draw_joint(vertex_list)
+            right.draw_joint(vertex_list)
+            Primitives.render_all(vertex_list)
+            pygame.display.flip()
+            pygame.time.wait(80)
+
+            # save each frame so we can make a gif afterward
+            pygame.image.save(surface, directory + "pic" + str(i) + ".png")
+            i = i + 1
+
+            alpha_prev = list(alpha_cur)
 
 
 def print_inputs():
