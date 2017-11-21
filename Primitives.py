@@ -17,8 +17,8 @@ def rectangle(a, b, c, d, vertex_list):
 
 def triangle(a, b, c, vertex_list):
     """ adds a set of vertexes to the vertex list, indexed by min z value"""
-    min_z = min(a[2], b[2], c[2])
-    min_y = min(a[1], b[1], c[1])
+    min_z = min(a.item(2), b.item(2), c.item(2))
+    min_y = min(a.item(1), b.item(1), c.item(1))
     if min_z in vertex_list:
         if min_y in vertex_list[min_z]:
             vertex_list[min_z][min_y].append((a, b, c))  # append to an existing list

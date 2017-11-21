@@ -53,15 +53,17 @@ def main():
     g = Link.Link()
     # beta the transform from center link to CoM/mean orientation frame
     beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-    g.update(beta.matrix)
+    g.update(beta)
     # left is the index -1 link, right is the index 1 link
     left = Link.Link()
     # the Link constructor initializes to the origin, so we need to move the links to their initial positions
-    h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
-    left.update(h_left)
+    # h_center = GeoUtils.frame_difference(center.gmp.matrix, g.gmp.matrix * beta.matrix.getI())
+    center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
+    # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
+    left.update(GeoUtils.g_left(center, joint_left))
     right = Link.Link()
-    h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-    right.update(h_right)
+    # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
+    right.update(GeoUtils.g_right(center, joint_right))
 
     # create a list of vertices that will need to be drawn
     vertex_list = {}  # initialize an empty dictionary each time
@@ -92,15 +94,18 @@ def main():
         # TODO: draw links based on relative placement... almost there...
         # TODO: update links based on body velocity of CoM frame
 
-        beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-        g.update(beta.matrix)
-        g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot, alpha_dot)
         joint_left += alpha_dot
-        h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
-        left.update(h_left)
         joint_right += alpha_dot
-        h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-        right.update(h_right)
+        beta = GeoUtils.calc_beta(center, joint_left, joint_right)
+        g.update(beta)
+        g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot, alpha_dot)
+        # h_center = GeoUtils.frame_difference(center.gmp.matrix, g.gmp.matrix * beta.matrix.getI())
+        # center.update(h_center)
+        center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())
+        # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
+        left.update(GeoUtils.g_left(center, joint_left))
+        # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
+        right.update(GeoUtils.g_right(center, joint_right))
 
         # now draw everything
         left.draw_joint(vertex_list)
@@ -114,10 +119,19 @@ def main():
         pygame.image.save(surface, directory + "pic" + str(i) + ".png")
 
 
+def print_inputs():
+    radius = math.pi * 0.125
+    angle = 0
+    steps = 100
+    center = 3 * math.pi / 8
+    for t in reversed(range(steps)):
+        angle += 2 * math.pi / steps
+        x = center + radius * math.cos(angle)
+        y = (-1 * center) + radius * math.sin(angle)
+        print("{},{}".format(x, y))
+
+
 if __name__ == '__main__':
     main()
-    # dict = {1.0: ['a', 'b'], 2.0: ['c', 'd'], 1.5: ['e', 'f']}
-    # for i in sorted(dict.keys()):
-    #     print("key: {}, value: {}".format(i, dict[i]))
 
 
