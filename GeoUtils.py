@@ -1,5 +1,5 @@
 from numpy import matrix
-from math import sin, cos
+from math import sin, cos, acos
 import SE3
 
 
@@ -106,4 +106,36 @@ def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
            ((length * (length - length * cos(alpha1)) * 0.5) * d * alpha1_dot)
     row2 = 0  # the y and z components will be zero for the body velocity of the system frame, so this still works
     row3 = ((-1 * length * sin(alpha1)) * d * alpha0_dot) + ((length * sin(alpha1)) * d * alpha1_dot)
+    return [row1, row2, row3]
+
+
+def world_velocity(g_body_velocity, g):
+    """"""
+    # we can drop into SE(2) to do these calculations in the x-z plane
+    rho_gbv = matrix([[0, -1 * g_body_velocity[2], g_body_velocity[0]],
+                      [g_body_velocity[2], 0, g_body_velocity[1]],
+                      [0, 0, 0]])
+    g_se2_mat = xyz_to_xz(g.gmp.matrix)
+    rho_g_dot = g_se2_mat * rho_gbv
+    theta = angle_from_mat(rho_g_dot)
+    g_dot = SE3.SE3(rho_g_dot.item((0, 2)), 0, rho_g_dot.item((1, 2)), quat_from_theta(theta))
+    return g_dot
+
+
+def xyz_to_xz(g_mat):
+    # the tricky thing here is getting the angle out. We can use trace(R) = 1 + 2cos(theta), as long as theta < pi
+    theta = angle_from_mat(g_mat)
+    row1 = [cos(theta), -1 * sin(theta), x_from_matrix(g_mat)]
+    row2 = [sin(theta), cos(theta), y_from_matrix(g_mat)]
+    row3 = [0, 0, 1]
     return matrix([row1, row2, row3])
+
+
+def angle_from_mat(m):
+    trace = m.item((0, 0)) + m.item((1, 1)) + m.item((2, 2))
+    theta = acos((trace - 1) * 0.5)
+    return theta
+
+
+
+

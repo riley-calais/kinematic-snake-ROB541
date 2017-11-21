@@ -113,6 +113,8 @@ def main():
             g.update(beta)
             g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot_left,
                                                             alpha_dot_right)
+            g_dot = GeoUtils.world_velocity(g_body_velocity, g)
+            g.shift(g_dot)
             """ g_body_velocity contains the x and theta components of the body velocity of the CoM frame
                 1. convert to world velocities
                 2. update the position and orientation of g with those velocities 

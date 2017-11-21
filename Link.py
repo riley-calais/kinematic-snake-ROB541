@@ -76,6 +76,10 @@ class Link:
         # adjoint = GeoUtils.adjoint_inverse(self.gmp.matrix, self.right_cap.matrix, h)
         # self.right_cap.mult_right_mat(adjoint)
 
+    def shift(self, h):
+        """ try just multiplying g_dot into the SE(3) matrix"""
+        self.gmp.mult_right(h)
+
     def displacement(self):
         """"""
         return (self.length * 0.5) + math.sqrt(self.x()**2 + self.y()**2 + self.z()**2)
