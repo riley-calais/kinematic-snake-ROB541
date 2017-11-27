@@ -133,21 +133,21 @@ def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
 def world_velocity(g_body_velocity, g):
     """"""
     # we can drop into SE(2) to do these calculations in the x-z plane
-    # rho_gbv = matrix([[0, -1 * g_body_velocity[2], g_body_velocity[0]],
-    #                   [g_body_velocity[2], 0, g_body_velocity[1]],
-    #                   [0, 0, 0]])
-    # g_se2_mat = xyz_to_xz(g.gmp.matrix)
-    # rho_g_dot = g_se2_mat * rho_gbv
-    # theta = angle_from_mat(rho_g_dot)
-    # g_dot = SE3.SE3(rho_g_dot.item((0, 2)), 0, rho_g_dot.item((1, 2)), quat_from_theta(theta))
-    # return g_dot
+    rho_gbv = matrix([[0, -1 * g_body_velocity[2], g_body_velocity[0]],
+                      [g_body_velocity[2], 0, g_body_velocity[1]],
+                      [0, 0, 0]])
+    g_se2_mat = xyz_to_xz(g.gmp.matrix)
+    rho_g_dot = g_se2_mat * rho_gbv
+    theta = angle_from_mat(rho_g_dot)
+    g_dot = SE3.SE3(rho_g_dot.item((0, 2)), 0, rho_g_dot.item((1, 2)), quat_from_theta(theta))
+    return g_dot
 
     # if we have SE3 for everything, then just multiply:
-    rho_gbv = rho_body_velocity(g_body_velocity)
-    g_dot = g.gmp.matrix * rho_gbv
-    temp = SE3.SE3(0, 0, 0, quat_from_theta(0))
-    temp.hard_reset(g_dot)
-    return temp
+    # rho_gbv = rho_body_velocity(g_body_velocity)
+    # g_dot = g.gmp.matrix * rho_gbv
+    # temp = SE3.SE3(0, 0, 0, quat_from_theta(0))
+    # temp.hard_reset(g_dot)
+    # return temp
 
 
 def rho_body_velocity(body_velocity):

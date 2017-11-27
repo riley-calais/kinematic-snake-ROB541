@@ -51,14 +51,14 @@ def main():
     joint_left = 0.0
     joint_right = 0.0
     # center is the center link, g is the system body frame
-    center = Link.Link((0.2, 0.8, 0.2))
+    center = Link.Link((0.2, 0.6, 0.2))
     g = Link.Link((0, 0, 0))
     # beta the transform from center link to CoM/mean orientation frame
     beta = GeoUtils.calc_beta(center, joint_left, joint_right)
     g.update(beta)
     center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
     # left is the index -1 link, right is the index 1 link
-    left = Link.Link((0.2, 0.7, 0.2))
+    left = Link.Link((0.2, 0.3, 0.2))
     right = Link.Link((0.2, 0.9, 0.2))
 
     # create a list of vertices that will need to be drawn
