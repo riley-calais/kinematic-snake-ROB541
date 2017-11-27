@@ -25,13 +25,13 @@ def draw_walls():
         b = [x + 0.2, -0.2, 10]
         c = [x, -0.2, -10]
         d = [x + 0.2, -0.2, -10]
-        Primitives.render_rectangle(a, b, c, d, True)
+        Primitives.render_rectangle(a, b, c, d, (1, 1, 1))
         # draw the wall
         a = [x, -0.2, -10]
         b = [x + 0.2, -0.2, -10]
         c = [x, 10, -10]
         d = [x + 0.2, 10, -10]
-        Primitives.render_rectangle(a, b, c, d, True)
+        Primitives.render_rectangle(a, b, c, d, (1, 1, 1))
 
 
 def main():
@@ -40,6 +40,7 @@ def main():
     display = (disp_size, disp_size)
     surface = pygame.display.set_mode(display, pygame.locals.DOUBLEBUF | pygame.locals.OPENGL)
     directory = "C:\\Users\\Riley\\Documents\\GeoMech_Gifs\\gif_comp\\"
+    pause = 5
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
 
@@ -50,21 +51,15 @@ def main():
     joint_left = 0.0
     joint_right = 0.0
     # center is the center link, g is the system body frame
-    center = Link.Link()
-    g = Link.Link()
+    center = Link.Link((0.2, 0.8, 0.2))
+    g = Link.Link((0, 0, 0))
     # beta the transform from center link to CoM/mean orientation frame
     beta = GeoUtils.calc_beta(center, joint_left, joint_right)
     g.update(beta)
-    # left is the index -1 link, right is the index 1 link
-    left = Link.Link()
-    # the Link constructor initializes to the origin, so we need to move the links to their initial positions
-    # h_center = GeoUtils.frame_difference(center.gmp.matrix, g.gmp.matrix * beta.matrix.getI())
     center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
-    # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
-    # left.update(GeoUtils.g_left(center, joint_left))
-    right = Link.Link()
-    # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
-    # right.update(GeoUtils.g_right(center, joint_right))
+    # left is the index -1 link, right is the index 1 link
+    left = Link.Link((0.2, 0.7, 0.2))
+    right = Link.Link((0.2, 0.9, 0.2))
 
     # create a list of vertices that will need to be drawn
     vertex_list = {}  # initialize an empty dictionary each time
@@ -76,13 +71,10 @@ def main():
     # draw everything to the screen, in the correct z and y order
     Primitives.render_all(vertex_list)
     pygame.display.flip()
-    pygame.time.wait(80)
+    pygame.time.wait(pause)
 
-    # steps determines how fast we change the alpha values (joint_left and joint_right)
-    # steps = 100
-    # alpha_dot = math.pi / (steps * 0.5)
-    # for i in range(steps):
-    filename = directory + "snake_input.csv"
+    filename = directory + "circle.csv"
+    # while True:
     with open(filename) as alpha_file:
         alpha_reader = csv.reader(alpha_file)
         first_loop = True
@@ -115,20 +107,12 @@ def main():
                                                             alpha_dot_right)
             g_dot = GeoUtils.world_velocity(g_body_velocity, g)
             g.shift(g_dot)
-            """ g_body_velocity contains the x and theta components of the body velocity of the CoM frame
-                1. convert to world velocities
-                2. update the position and orientation of g with those velocities 
-                   (you can just make a quaternion with theta, it's ok)
-                3. I think we have the rest, actually... we update the center link based on the new values of g...
-            """
+            center_shift = g.gmp.matrix * beta.matrix.getI()
 
-            center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())
-            # h_left = GeoUtils.frame_difference(left.gmp.matrix, GeoUtils.g_left(center, joint_left).matrix)
+            center.gmp.hard_reset(center_shift)
+            print(g.x())
             left.update(GeoUtils.g_left(center, joint_left))
-            # h_right = GeoUtils.frame_difference(right.gmp.matrix, GeoUtils.g_right(center, joint_right).matrix)
             right.update(GeoUtils.g_right(center, joint_right))
-            # TODO: the links aren't updating correctly... it's like they get some sort of z offset,
-            # TODO: so maybe look for that...
 
             # now draw everything
             left.draw_joint(vertex_list)
@@ -136,7 +120,7 @@ def main():
             right.draw_joint(vertex_list)
             Primitives.render_all(vertex_list)
             pygame.display.flip()
-            pygame.time.wait(80)
+            pygame.time.wait(pause)
 
             # save each frame so we can make a gif afterward
             pygame.image.save(surface, directory + "pic" + str(i) + ".png")

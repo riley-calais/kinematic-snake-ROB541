@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy
 import GeoUtils
 
@@ -19,7 +20,7 @@ class SE3:
 
     def hard_reset(self, m):
         """ sometimes it's easier to just pass in a matrix"""
-        self.matrix = m
+        self.matrix = deepcopy(m)
 
     def mult_right(self, h):
         """ multiplies the current SE3 object by another one, which is coming from the right"""
