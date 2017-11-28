@@ -40,7 +40,7 @@ def main():
     display = (disp_size, disp_size)
     surface = pygame.display.set_mode(display, pygame.locals.DOUBLEBUF | pygame.locals.OPENGL)
     directory = "C:\\Users\\Riley\\Documents\\GeoMech_Gifs\\gif_comp\\"
-    pause = 5
+    pause = 0
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
 
@@ -56,7 +56,9 @@ def main():
     # beta the transform from center link to CoM/mean orientation frame
     beta = GeoUtils.calc_beta(center.length, joint_left, joint_right)
     g.update_com(center, beta)
-    center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
+    temp = deepcopy(g.gmp)
+    temp.mult_right(SE3.inverse(beta))
+    center.gmp.reset(temp)
     # left is the index -1 link, right is the index 1 link
     left = Link.Link((0.2, 0.3, 0.2))
     right = Link.Link((0.2, 0.9, 0.2))
@@ -73,7 +75,7 @@ def main():
     pygame.display.flip()
     pygame.time.wait(pause)
 
-    filename = directory + "max_displacement.csv"
+    filename = directory + "snake_input.csv"
     # while True:
     with open(filename) as alpha_file:
         alpha_reader = csv.reader(alpha_file)
@@ -106,9 +108,13 @@ def main():
                                                             alpha_dot_right)
             g_dot = GeoUtils.world_velocity(g_body_velocity, g)
             g.shift(g_dot)
-            center_shift = g.gmp.matrix * beta.matrix.getI()
-            center.gmp.hard_reset(center_shift)
-            print("i: {}, g_dot.x: {}".format(i, g_dot.x()))
+            center_shift = deepcopy(g.gmp)
+            center_shift.mult_right(SE3.inverse(beta))
+            center.gmp.reset(center_shift)
+            # if i == 36:
+            #     center.color = (1, 0, 0)
+            # print_link_z(i, g)
+            print_link_x(i, center)
             left.update(GeoUtils.g_left(center, joint_left))
             right.update(GeoUtils.g_right(center, joint_right))
 
@@ -123,20 +129,29 @@ def main():
             pygame.display.flip()
             pygame.time.wait(pause)
 
-            alpha_prev = list(alpha_cur)
+            alpha_prev = deepcopy(alpha_cur)
             first_loop = False
 
 
-def print_inputs():
-    radius = math.pi * 0.125
-    angle = 0
-    steps = 100
-    center = 3 * math.pi / 8
-    for t in reversed(range(steps)):
-        angle += 2 * math.pi / steps
-        x = center + radius * math.cos(angle)
-        y = (-1 * center) + radius * math.sin(angle)
-        print("{},{}".format(x, y))
+# -----  Below are a bunch of print functions for debugging    --------
+def print_x_diff(g, center):
+    print("x diff (g - center): {}".format(g.x() - center.x()))
+
+
+def print_link_orientation(i, link):
+    print("i: {}, theta: {}".format(i, link.gmp.theta))
+
+
+def print_link_x(i, link):
+    print("i: {}, x: {}".format(i, link.x()))
+
+
+def print_link_z(i, link):
+    print("i: {}, z: {}".format(i, link.z()))
+
+
+def print_link_x_theta(i, link):
+    print("i: {}, x: {}, theta: {}".format(i, link.x(), link.gmp.theta))
 
 
 if __name__ == '__main__':

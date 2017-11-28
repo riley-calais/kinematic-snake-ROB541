@@ -64,31 +64,3 @@ def render_rectangle(a, b, c, d, color, no_lines):
     render_triangle(b, c, d, color, no_lines)  # bottom right portion
 
 
-if __name__ == '__main__':
-    pass
-    # pygame.init()
-    # display = (800, 600)
-    # pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    #
-    # gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    #
-    # glTranslatef(0.0, 0.0, -5)
-    #
-    # while True:
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             pygame.quit()
-    #             quit()
-    #
-    #     a = (-0.5, 0.5, 0.0)
-    #     b = (0.5, 0.5, 0.0)
-    #     c = (-0.5, -0.5, 0.0)
-    #     d = (0.5, -0.5, 0.0)
-    #
-    #     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    #     rectangle(a, b, c, d)
-    #
-    #     pygame.display.flip()
-    #     pygame.time.wait(10)
-
-
