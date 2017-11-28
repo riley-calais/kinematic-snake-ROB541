@@ -1,5 +1,4 @@
 import math
-from copy import deepcopy
 from numpy import matrix
 import SE3
 import GeoUtils
@@ -9,7 +8,6 @@ import Primitives
 class Link:
     def __init__(self, color):
         self.color = color
-        q_theta = GeoUtils.quat_from_theta(0.0)  # start with an angle of zero
         x = 0.0
         y = 0.0
         z = 0.0
@@ -20,7 +18,7 @@ class Link:
         half_length = self.length * 0.5
 
         # vector from the proximal end of the link to the medial
-        self.gmp = SE3.SE3(x, y, z, q_theta)
+        self.gmp = SE3.SE3(x, y, z, GeoUtils.quat_from_theta(0.0))
 
         # there are four vertices for the top rectangle
         self.top_back_left = matrix([[x - (half_length - cap_diff)], [y + y_diff], [z - z_diff], [1]])
@@ -38,11 +36,19 @@ class Link:
 
     def update(self, h):
         """"""
-        self.gmp = deepcopy(h)
+        self.gmp.hard_reset(h)
 
-    def shift(self, h):
-        """ try just multiplying g_dot into the SE(3) matrix"""
-        self.gmp.mult_right(h)
+    def update_com(self, center, beta):
+        self.gmp.hard_reset(center.gmp.matrix * beta.matrix)
+
+    def shift(self, velocity):
+        """ add the components of g_dot into the SE(3) matrix"""
+        x = self.x() + velocity.x()
+        y = self.y() + velocity.y()
+        z = self.z() + velocity.z()
+        theta = GeoUtils.angle_from_mat(self.gmp.matrix) + GeoUtils.angle_from_mat(velocity.matrix)
+        self.gmp = SE3.SE3(x, y, z, GeoUtils.quat_from_theta(theta))
+
 
     def shift_mat(self, h):
         self.gmp.mult_right_mat(h)

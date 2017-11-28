@@ -25,13 +25,13 @@ def draw_walls():
         b = [x + 0.2, -0.2, 10]
         c = [x, -0.2, -10]
         d = [x + 0.2, -0.2, -10]
-        Primitives.render_rectangle(a, b, c, d, (1, 1, 1))
+        Primitives.render_rectangle(a, b, c, d, (1, 1, 1), True)
         # draw the wall
         a = [x, -0.2, -10]
         b = [x + 0.2, -0.2, -10]
         c = [x, 10, -10]
         d = [x + 0.2, 10, -10]
-        Primitives.render_rectangle(a, b, c, d, (1, 1, 1))
+        Primitives.render_rectangle(a, b, c, d, (1, 1, 1), True)
 
 
 def main():
@@ -54,8 +54,8 @@ def main():
     center = Link.Link((0.2, 0.6, 0.2))
     g = Link.Link((0, 0, 0))
     # beta the transform from center link to CoM/mean orientation frame
-    beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-    g.update(beta)
+    beta = GeoUtils.calc_beta(center.length, joint_left, joint_right)
+    g.update_com(center, beta)
     center.gmp.hard_reset(g.gmp.matrix * beta.matrix.getI())  # welp. this is hideous.
     # left is the index -1 link, right is the index 1 link
     left = Link.Link((0.2, 0.3, 0.2))
@@ -73,7 +73,7 @@ def main():
     pygame.display.flip()
     pygame.time.wait(pause)
 
-    filename = directory + "circle.csv"
+    filename = directory + "max_displacement.csv"
     # while True:
     with open(filename) as alpha_file:
         alpha_reader = csv.reader(alpha_file)
@@ -97,20 +97,18 @@ def main():
             else:
                 alpha_dot_left = float(alpha_cur[0]) - float(alpha_prev[0])
                 alpha_dot_right = float(alpha_cur[1]) - float(alpha_prev[1])
-            first_loop = False
 
-            joint_left = float(alpha_cur[0])
+            joint_left = -float(alpha_cur[0])
             joint_right = float(alpha_cur[1])
-            beta = GeoUtils.calc_beta(center, joint_left, joint_right)
-            g.update(beta)
+            beta = GeoUtils.calc_beta(center.length, joint_left, joint_right)
+            g.update_com(center, beta)
             g_body_velocity = GeoUtils.system_body_velocity(g.length, joint_left, joint_right, alpha_dot_left,
                                                             alpha_dot_right)
             g_dot = GeoUtils.world_velocity(g_body_velocity, g)
             g.shift(g_dot)
             center_shift = g.gmp.matrix * beta.matrix.getI()
-
             center.gmp.hard_reset(center_shift)
-            print(g.x())
+            print("i: {}, g_dot.x: {}".format(i, g_dot.x()))
             left.update(GeoUtils.g_left(center, joint_left))
             right.update(GeoUtils.g_right(center, joint_right))
 
@@ -119,14 +117,14 @@ def main():
             center.draw_joint(vertex_list)
             right.draw_joint(vertex_list)
             Primitives.render_all(vertex_list)
-            pygame.display.flip()
-            pygame.time.wait(pause)
-
             # save each frame so we can make a gif afterward
             pygame.image.save(surface, directory + "pic" + str(i) + ".png")
             i = i + 1
+            pygame.display.flip()
+            pygame.time.wait(pause)
 
             alpha_prev = list(alpha_cur)
+            first_loop = False
 
 
 def print_inputs():

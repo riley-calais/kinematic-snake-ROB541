@@ -30,10 +30,10 @@ def render_all(vertex_list):
     for z in sorted(vertex_list.keys()):
         for y in sorted(vertex_list[z].keys()):
             for a, b, c, color in vertex_list[z][y]:
-                render_triangle(a, b, c, color)
+                render_triangle(a, b, c, color, False)
 
 
-def render_triangle(a, b, c, color):
+def render_triangle(a, b, c, color, no_lines):
     """ the parameters are each a single vertex of the triangle"""
     # if not color_flag:  # use the default colors
     glColor3f(color[0], color[1], color[2])
@@ -43,25 +43,25 @@ def render_triangle(a, b, c, color):
     glVertex3f(c[0], c[1], c[2])
     glEnd()
     # lines from a to b, from b to c, and c to a
-    # if not color_flag:
-    glColor3f(color[0] * 0.8, color[1] * 0.8, color[2] * 0.8)  # use a slightly darker color for the lines
-    glBegin(GL_LINE_STRIP)
-    glVertex3f(a[0], a[1], a[2])
-    glVertex3f(b[0], b[1], b[2])
-    glVertex3f(c[0], c[1], c[2])
-    glVertex3f(a[0], a[1], a[2])
-    glEnd()
+    if not no_lines:
+        glColor3f(color[0] * 0.8, color[1] * 0.8, color[2] * 0.8)  # use a slightly darker color for the lines
+        glBegin(GL_LINE_STRIP)
+        glVertex3f(a[0], a[1], a[2])
+        glVertex3f(b[0], b[1], b[2])
+        glVertex3f(c[0], c[1], c[2])
+        glVertex3f(a[0], a[1], a[2])
+        glEnd()
 
 
-def render_rectangle(a, b, c, d, color_flag):
+def render_rectangle(a, b, c, d, color, no_lines):
     """ the parameters are each a single vertex of the rectangle, in the following arrangement:
         a - - - b
         |       |
         |       |
         c - - - d
         """
-    render_triangle(a, b, c, color_flag)  # upper left portion
-    render_triangle(b, c, d, color_flag)  # bottom right portion
+    render_triangle(a, b, c, color, no_lines)  # upper left portion
+    render_triangle(b, c, d, color, no_lines)  # bottom right portion
 
 
 if __name__ == '__main__':

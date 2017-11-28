@@ -32,7 +32,7 @@ def frame_difference(ga, gb):
 
 
 def quat_from_theta(theta):
-    """"""
+    """ our axis is always (0, 1, 0) ,so q1 and q3 are always 0"""
     return [cos(theta * 0.5), 0.0, sin(theta * 0.5), 0.0]
 
 
@@ -84,7 +84,7 @@ def g_right(g, joint_right):
     """ calculates the SE(3) matrix for the left link, g_{-1}"""
     x = (g.length * 0.5) + (g.length * 0.5) * cos(joint_right)
     y = g.y()  # everything should have the same y values, all movement happens in the xz plane
-    z = -1 * ((g.length * 0.5) * sin(joint_right))
+    z = -((g.length * 0.5) * sin(joint_right))
     multiplier = SE3.SE3(x, y, z, quat_from_theta(joint_right))
     product = se3_mult(g.gmp, multiplier)
     temp = SE3.SE3(0, 0, 0, quat_from_theta(0))
@@ -92,12 +92,21 @@ def g_right(g, joint_right):
     return temp
 
 
-def calc_beta(g, joint_left, joint_right):
+def calc_beta(length, joint_left, joint_right):
     """"""
-    x = (g.length * (cos(joint_right) - cos(joint_left))) * ONE_THIRD
-    y = g.y()  # everything happens in the xz plane, so the y doesn't change
-    z = (g.length * (sin(joint_right) + sin(joint_left))) * ONE_THIRD
+    x = (length * (cos(joint_right) - cos(joint_left))) * ONE_THIRD
+    y = 0  # everything happens in the xz plane, so the y doesn't change
+    z = (length * (sin(joint_right) + sin(joint_left))) * ONE_THIRD
     theta = (joint_right - joint_left) * ONE_THIRD
+    return SE3.SE3(x, y, z, quat_from_theta(theta))
+
+
+def calc_com(link1, link2, link3, joint_left, joint_right):
+    """ average in each direction"""
+    x = (link1.x() + link2.x() + link3.x()) * ONE_THIRD
+    y = (link1.y() + link2.y() + link3.y()) * ONE_THIRD
+    z = (link1.z() + link2.z() + link3.z()) * ONE_THIRD
+    theta = (joint_right - joint_left) * 0.5
     return SE3.SE3(x, y, z, quat_from_theta(theta))
 
 
@@ -116,9 +125,9 @@ def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
     # try another approach:
 
     half_l = length * 0.5
-    row1 = [sin(alpha0), 1, cos(alpha0), (cos(alpha0) - 1) * half_l]
+    row1 = [sin(alpha0), 0, cos(alpha0), (cos(alpha0) - 1) * half_l]
     row2 = [0, 0, 1, 0]
-    row3 = [-sin(alpha1), 1, cos(alpha1), (cos(alpha1) + 1) * half_l]
+    row3 = [-sin(alpha1), 0, cos(alpha1), (cos(alpha1) + 1) * half_l]
     m = matrix([row1, row2, row3])
     omega_g = -1 * m.getI()
     row1 = [-half_l, 0]
@@ -133,12 +142,12 @@ def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
 def world_velocity(g_body_velocity, g):
     """"""
     # we can drop into SE(2) to do these calculations in the x-z plane
-    rho_gbv = matrix([[0, -1 * g_body_velocity[2], g_body_velocity[0]],
-                      [g_body_velocity[2], 0, g_body_velocity[1]],
+    rho_gbv = matrix([[0, -1 * g_body_velocity[3], g_body_velocity[0]],
+                      [g_body_velocity[3], 0, g_body_velocity[2]],
                       [0, 0, 0]])
     g_se2_mat = xyz_to_xz(g.gmp.matrix)
     rho_g_dot = g_se2_mat * rho_gbv
-    theta = angle_from_mat(rho_g_dot)
+    theta = angle_from_mat(g.gmp.matrix) + g_body_velocity[3]  # just add the thetas together
     g_dot = SE3.SE3(rho_g_dot.item((0, 2)), 0, rho_g_dot.item((1, 2)), quat_from_theta(theta))
     return g_dot
 
@@ -151,11 +160,25 @@ def world_velocity(g_body_velocity, g):
 
 
 def rho_body_velocity(body_velocity):
-    row1 = [0, 0, 1, body_velocity[0]]
-    row2 = [0, 0, 0, body_velocity[1]]
-    row3 = [-1, 0, 0, body_velocity[2]]
+    q = quat_mat(quat_from_theta(body_velocity[3]))
+    row1 = [0, 0, 1]
+    row2 = [0, 0, 0]
+    row3 = [-1, 0, 0]
+    s = matrix([row1, row2, row3])
+    dq = s * q
+    row1 = [dq.item((0, 0)), dq.item((0, 1)), dq.item((0, 2)), body_velocity[0]]
+    row2 = [dq.item((1, 0)), dq.item((1, 1)), dq.item((1, 2)), body_velocity[1]]
+    row3 = [dq.item((2, 0)), dq.item((2, 1)), dq.item((2, 2)), body_velocity[2]]
     row4 = [0, 0, 0, 0]
     return matrix([row1, row2, row3, row4])
+
+
+def quat_mat(q):
+    """ returns the rotation matrix of a quaternion"""
+    row1 = [q[0] ** 2 - q[2] ** 2, 0, 2 * q[0] * q[2]]
+    row2 = [0, q[0] ** 2 + q[2] ** 2, 0]
+    row3 = [-2 * q[0] * q[2], 0, q[0] ** 2 - q[2] ** 2]
+    return matrix([row1, row2, row3])
 
 
 def xyz_to_xz(g_mat):
@@ -168,6 +191,8 @@ def xyz_to_xz(g_mat):
 
 
 def angle_from_mat(m):
+    if m.item((0, 0)) == 0 and m.item((0, 1)) == 0:
+        return 0  # this happens when velocity is zero
     trace = m.item((0, 0)) + m.item((1, 1)) + m.item((2, 2))
     theta = acos((trace - 1) * 0.5)
     return theta
