@@ -16,12 +16,12 @@ def draw_walls():
     # a bunch of lines with increasing x values
     glColor3f(1, 1, 1)
 
-    xs = [x / 10 for x in range(-100, 100, 15)]
+    xs = [x / 10 for x in range(-150, 150, 15)]
 
     for x in xs:
         # draw the floor
-        a = [x, -0.2, 10]
-        b = [x + 0.2, -0.2, 10]
+        a = [x, -0.2, 30]
+        b = [x + 0.2, -0.2, 30]
         c = [x, -0.2, -10]
         d = [x + 0.2, -0.2, -10]
         Primitives.render_rectangle(a, b, c, d, (1, 1, 1), True)
@@ -43,8 +43,8 @@ def main():
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
 
-    glRotatef(25, 1, 0, 0)
-    glTranslatef(1.0, -2.5, -10)
+    glRotatef(20, 1, 0, 0)
+    glTranslatef(0.0, -2.5, -15)
 
     # initialize alphas to 0
     joint_left = 0.0
@@ -74,7 +74,7 @@ def main():
     pygame.display.flip()
     pygame.time.wait(pause)
 
-    filename = directory + "max_displacement.csv"
+    filename = directory + "kinematic_optimal.csv"
     # while True:
     with open(filename) as alpha_file:
         alpha_reader = csv.reader(alpha_file)
@@ -110,10 +110,10 @@ def main():
             center_shift = deepcopy(g.gmp)
             center_shift.mult_right(SE3.inverse(beta))
             center.gmp.reset(center_shift)
-            # if i == 25:
+            # if i == 8:
             #     center.color = (1, 0, 0)
             # print_link_z(i, g)
-            print_link_x(i, center)
+            print_link(i, center)
             left.update(GeoUtils.g_left(center, joint_left))
             right.update(GeoUtils.g_right(center, joint_right))
 
@@ -139,6 +139,10 @@ def print_x_diff(g, center):
 
 def print_link_orientation(i, link):
     print("i: {}, theta: {}".format(i, link.gmp.theta))
+
+
+def print_link(i, link):
+    print("i: {}, x: {}, z: {}, theta: {}".format(i, link.gmp.x(), link.gmp.z(), link.gmp.theta))
 
 
 def print_link_x(i, link):

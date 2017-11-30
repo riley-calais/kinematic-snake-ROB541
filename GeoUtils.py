@@ -73,19 +73,10 @@ def calc_beta(length, joint_left, joint_right):
 
 def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
     """ calculates the body velocity for the CoM frame for the system"""
-    # d = -1 / ((sin(alpha0 + alpha1) - sin(alpha0) + sin(alpha1)) * length)
-    # row1 = [-length * (length + length * cos(alpha1)) * 0.5, length * (length - length * cos(alpha0)) * 0.5]
-    # row2 = [0, 0]
-    # row3 = [-length * sin(alpha1), length * sin(alpha0)]
-    # m = matrix([row1, row2, row3])
-    # alpha_dot = matrix([[alpha0_dot], [alpha1_dot]])
-    # body_velocity = d * m * alpha_dot
-    # return matrix([[body_velocity[0]], [0], [body_velocity[1]], [body_velocity[2]]])
-
     half_l = length * 0.5
-    row1 = [sin(alpha0), 0, cos(alpha0), (cos(alpha0) - 1) * half_l]
-    row2 = [0, 1, 1, 0]
-    row3 = [-sin(alpha1), 0, cos(alpha1), (cos(alpha1) + 1) * half_l]
+    row1 = [sin(alpha0), 0.4, cos(alpha1), (cos(alpha0) - 1) * half_l]
+    row2 = [0, 0.4, 1, 0]
+    row3 = [-sin(alpha1), 0.4, cos(alpha0), (cos(alpha1) + 1) * half_l]
     m = matrix([row1, row2, row3])
     omega_g = -1 * m.getI()
     row1 = [-half_l, 0]
