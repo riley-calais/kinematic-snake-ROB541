@@ -73,9 +73,18 @@ def calc_beta(length, joint_left, joint_right):
 
 def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
     """ calculates the body velocity for the CoM frame for the system"""
+    # d = -1 / ((sin(alpha0 + alpha1) - sin(alpha0) + sin(alpha1)) * length)
+    # row1 = [-length * (length + length * cos(alpha1)) * 0.5, length * (length - length * cos(alpha0)) * 0.5]
+    # row2 = [0, 0]
+    # row3 = [-length * sin(alpha1), length * sin(alpha0)]
+    # m = matrix([row1, row2, row3])
+    # alpha_dot = matrix([[alpha0_dot], [alpha1_dot]])
+    # body_velocity = d * m * alpha_dot
+    # return matrix([[body_velocity[0]], [0], [body_velocity[1]], [body_velocity[2]]])
+
     half_l = length * 0.5
     row1 = [sin(alpha0), 0, cos(alpha0), (cos(alpha0) - 1) * half_l]
-    row2 = [0, 0, 1, 0]
+    row2 = [0, 1, 1, 0]
     row3 = [-sin(alpha1), 0, cos(alpha1), (cos(alpha1) + 1) * half_l]
     m = matrix([row1, row2, row3])
     omega_g = -1 * m.getI()
@@ -84,8 +93,10 @@ def system_body_velocity(length, alpha0, alpha1, alpha0_dot, alpha1_dot):
     row3 = [0, half_l]
     omega_b = matrix([row1, row2, row3])
     alpha_dot = matrix([[alpha0_dot], [alpha1_dot]])
-    body_velocity = omega_g * omega_b * alpha_dot
+    omegas = omega_g * omega_b
+    body_velocity = omegas * alpha_dot
     return body_velocity
+    # return matrix([[body_velocity[0]], [0], [body_velocity[1]], [body_velocity[2]]])
 
 
 def world_velocity(g_body_velocity, g):
@@ -99,6 +110,25 @@ def world_velocity(g_body_velocity, g):
     theta = g_body_velocity.item(3)  # just add the thetas together
     g_dot = SE3.SE3(rho_g_dot.item((0, 2)), 0, rho_g_dot.item((1, 2)), theta)
     return g_dot
+    # return cap_vel(g_dot)
+
+
+def cap_vel(g_dot):
+    if g_dot.x() > 0.3:
+        x = 0.3
+    elif g_dot.x() < -0.3:
+        x = -0.3
+    else:
+        x = g_dot.x()
+
+    if g_dot.z() > 0.3:
+        z = 0.3
+    elif g_dot.z() < -0.3:
+        z = -0.3
+    else:
+        z = g_dot.z()
+
+    return SE3.SE3(x, 0, z, g_dot.theta)
 
 
 def xyz_to_xz(g_mat, theta):

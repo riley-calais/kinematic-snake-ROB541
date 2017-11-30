@@ -1,8 +1,7 @@
-import math
 from copy import deepcopy
 import csv
 import pygame
-from pygame.locals import *
+import pygame.locals
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -40,12 +39,12 @@ def main():
     display = (disp_size, disp_size)
     surface = pygame.display.set_mode(display, pygame.locals.DOUBLEBUF | pygame.locals.OPENGL)
     directory = "C:\\Users\\Riley\\Documents\\GeoMech_Gifs\\gif_comp\\"
-    pause = 0
+    pause = 40
 
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
 
     glRotatef(25, 1, 0, 0)
-    glTranslatef(-1.0, -2.5, -10)
+    glTranslatef(1.0, -2.5, -10)
 
     # initialize alphas to 0
     joint_left = 0.0
@@ -75,7 +74,7 @@ def main():
     pygame.display.flip()
     pygame.time.wait(pause)
 
-    filename = directory + "snake_input.csv"
+    filename = directory + "max_displacement.csv"
     # while True:
     with open(filename) as alpha_file:
         alpha_reader = csv.reader(alpha_file)
@@ -111,7 +110,7 @@ def main():
             center_shift = deepcopy(g.gmp)
             center_shift.mult_right(SE3.inverse(beta))
             center.gmp.reset(center_shift)
-            # if i == 36:
+            # if i == 25:
             #     center.color = (1, 0, 0)
             # print_link_z(i, g)
             print_link_x(i, center)
@@ -154,7 +153,35 @@ def print_link_x_theta(i, link):
     print("i: {}, x: {}, theta: {}".format(i, link.x(), link.gmp.theta))
 
 
+def print_point(x, y):
+    print("{}, {}".format(x, y))
+
+
+def print_square_inputs():
+    x = 0.5
+    y = -1.5
+    step = 1 / 50
+    while y <= -0.5:
+        print_point(x, y)
+        y += step
+    while x <= 1.5:
+        print_point(x, y)
+        x += step
+    while y >= -1.5:
+        print_point(x, y)
+        y -= step
+    while x >= 0.5:
+        print_point(x, y)
+        x -= step
+
+
 if __name__ == '__main__':
     main()
+    # print_square_inputs()
+    # i = 0
+    # while i < 200:
+    #     name = "pic" + str(i) + ".png"
+    #     print(name)
+    #     i = i + 1
 
 
